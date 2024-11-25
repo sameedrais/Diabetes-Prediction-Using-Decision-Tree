@@ -1,0 +1,2 @@
+https://www.kaggle.com/datasets/mabdullahsajid/pakistan-hopitals-dataset
+https://www.kaggle.com/datasets/imnikhilanand/heart-attack-prediction

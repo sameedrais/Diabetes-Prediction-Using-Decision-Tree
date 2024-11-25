@@ -1,0 +1,14 @@
+Diabetes Diagnosis Decision Tree/
+├── src/
+│   ├── main.cpp
+│   ├── DecisionTree.cpp
+│   ├── DataPreprocessing.cpp
+│   └── DiabetesModel.cpp
+├── include/
+│   ├── DecisionTree.h
+│   ├── DataPreprocessing.h
+│   └── DiabetesModel.h
+├── data/
+│   └── diabetes.csv
+├── CMakeLists.txt
+└── README.md
