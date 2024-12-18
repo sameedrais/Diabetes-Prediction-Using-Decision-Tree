@@ -49,108 +49,86 @@
         <div id="result" class="result"></div>
         
         <div id="visualizeTreeButton" style="display: none;">
-            <button>
-                <a href="visualize.html">Visualize Tree</a>
+            <button id="visualizeButton">
+                Visualize Tree
             </button>
         </div>
         
     </main>
 
     <script>
+        const treeFiles = Array.from({ length: 15 }, (_, i) => `JSON/tree_${i + 1}.json`);
+        let decisionTrees = [];
     
-        let decisionTrees = []; // Array to store multiple trees
-
-        // Load multiple decision trees from the JSON files
-        async function loadDecisionTrees() {
-            for (let i = 1; i <= 15; i++) {
-                const treeFile = `JSON/tree_${i}.json`; // Assuming files are named tree_1.json, tree_2.json, ...
-                try {
-                    const data = await d3.json(treeFile);
-                    decisionTrees.push(data);
-                } catch (error) {
-                    console.error(`Error loading ${treeFile}:`, error);
+        // Load all the trees
+        async function loadTrees() {
+            const promises = treeFiles.map(file =>
+                fetch(file).then(res => res.json())
+            );
+            decisionTrees = await Promise.all(promises);
+            console.log("Decision trees loaded", decisionTrees);
+        }
+    
+        // Traverse a tree to get the decision path
+        function traverseTree(tree, input) {
+            let path = [];
+            let currentNode = tree;
+    
+            while (currentNode.label === null) {
+                path.push(currentNode.nodeIndex);
+    
+                const feature = input[currentNode.featureIndex];
+                if (feature < currentNode.threshold) {
+                    currentNode = currentNode.left;
+                } else {
+                    currentNode = currentNode.right;
                 }
             }
+    
+            path.push(currentNode.nodeIndex); // Add leaf node
+            return { label: currentNode.label, path };
         }
-
-        // Function to traverse a single tree
-        function traverseTree(tree, features) {
-            if (tree.label !== null) {
-                return tree.label === 1 ? "Diabetes" : "No Diabetes"; // Return the prediction
+    
+        // Predict the result
+        async function predictDiabetes() {
+            if (!decisionTrees.length) {
+                await loadTrees();
             }
-            const featureValue = features[tree.featureIndex];
-            if (featureValue < tree.threshold) {
-                return traverseTree(tree.left, features); // Go to the left subtree
-            } else {
-                return traverseTree(tree.right, features); // Go to the right subtree
-            }
+    
+            const input = {
+                0: +document.getElementById("pregnancies").value,
+                1: +document.getElementById("glucose").value,
+                2: +document.getElementById("bloodPressure").value,
+                3: +document.getElementById("skinThickness").value,
+                4: +document.getElementById("insulin").value,
+                5: +document.getElementById("bmi").value,
+                6: +document.getElementById("diabetesPedigree").value,
+                7: +document.getElementById("age").value
+            };
+    
+            let votes = { 0: 0, 1: 0 };
+            let paths = {};
+    
+            decisionTrees.forEach((tree, index) => {
+                const { label, path } = traverseTree(tree, input);
+                votes[label]++;
+                paths[`tree_${index + 1}`] = path;
+            });
+    
+            localStorage.setItem("decisionPaths", JSON.stringify(paths));
+    
+            document.getElementById("result").innerText = 
+                `Result: ${votes[1] > votes[0] ? "Diabetes" : "No Diabetes"} (Diabetes: ${votes[1]}, No Diabetes: ${votes[0]})`;
+    
+            document.getElementById("visualizeTreeButton").style.display = "block";
         }
-
-        // Function to make predictions using all decision trees and majority voting
-        function predictDiabetes() {
-            if (decisionTrees.length === 0) {
-                const resultElement = document.getElementById("result");
-                resultElement.textContent = "Decision trees not loaded yet. Please wait.";
-                resultElement.classList.add("error");
-                return;
-            }
-
-            // Gather inputs
-            const features = [
-                document.getElementById("pregnancies").value,
-                document.getElementById("glucose").value,
-                document.getElementById("bloodPressure").value,
-                document.getElementById("skinThickness").value,
-                document.getElementById("insulin").value,
-                document.getElementById("bmi").value,
-                document.getElementById("diabetesPedigree").value,
-                document.getElementById("age").value
-            ];
-
-            // Validate inputs
-            const areFieldsFilled = features.every(value => value !== "");
-            if (!areFieldsFilled) {
-                const resultElement = document.getElementById("result");
-                resultElement.textContent = "Please fill in all fields to proceed.";
-                resultElement.classList.remove("success");
-                resultElement.classList.add("error");
-
-                // Hide the "Visualize Tree" button
-                const visualizeTreeButton = document.getElementById("visualizeTreeButton");
-                visualizeTreeButton.style.display = "none";
-                return;
-            }
-
-            // Convert inputs to numbers
-            const numericFeatures = features.map(value => parseFloat(value));
-
-            // Get predictions from all trees
-            const predictions = decisionTrees.map(tree => traverseTree(tree, numericFeatures));
-
-            // Count the votes (majority voting)
-            const diabetesVotes = predictions.filter(prediction => prediction === "Diabetes").length;
-            const noDiabetesVotes = predictions.length - diabetesVotes;
-
-            // Majority voting
-            const result = diabetesVotes > noDiabetesVotes ? "Diabetes" : "No Diabetes";
-
-            // Display the result
-            const resultElement = document.getElementById("result");
-            resultElement.textContent = `Prediction: ${result}`;
-            resultElement.classList.remove("error");
-            resultElement.classList.add("success");
-
-            // Show the "Visualize Tree" button
-            const visualizeTreeButton = document.getElementById("visualizeTreeButton");
-            visualizeTreeButton.style.display = "block";
-        }
-
-        // Load trees when the page loads
-        window.onload = () => {
-            loadDecisionTrees(); // Load all trees asynchronously
-        };
-
-
-    </script>
+    
+        document.getElementById("visualizeButton").addEventListener("click", () => {
+            window.location.href = "visualize.html";
+        });
+    
+        // Load trees on page load
+        loadTrees();
+    </script> 
 </body>
 </html>
