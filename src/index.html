@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diabetes Prediction</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="style/index.global.css">
+    <link rel="stylesheet" href="style/index.form.css">
+    <link rel="stylesheet" href="style/index.resultBox.css">
+    <link rel="stylesheet" href="style/index.responsive.css">
+</head>
+    
+<body>
+    <header>
+        <h1>Diabetes Prediction Tool</h1>
+    </header>
+
+    <main>
+        <!-- Form for input features -->
+        <form id="predictionForm">
+            <label for="pregnancies">Pregnancies</label>
+            <input type="number" id="pregnancies" name="pregnancies" placeholder="Enter number of pregnancies" required>
+
+            <label for="glucose">Glucose</label>
+            <input type="number" id="glucose" name="glucose" placeholder="Enter glucose level" required>
+
+            <label for="bloodPressure">Blood Pressure</label>
+            <input type="number" id="bloodPressure" name="bloodPressure" placeholder="Enter blood pressure" required>
+
+            <label for="skinThickness">Skin Thickness</label>
+            <input type="number" id="skinThickness" name="skinThickness" placeholder="Enter skin thickness" required>
+
+            <label for="insulin">Insulin</label>
+            <input type="number" id="insulin" name="insulin" placeholder="Enter insulin level" required>
+
+            <label for="bmi">BMI</label>
+            <input type="number" step="0.1" id="bmi" name="bmi" placeholder="Enter BMI value" required>
+
+            <label for="diabetesPedigree">Diabetes Pedigree Function</label>
+            <input type="number" step="0.01" id="diabetesPedigree" name="diabetesPedigree" placeholder="Enter diabetes pedigree function" required>
+
+            <label for="age">Age</label>
+            <input type="number" id="age" name="age" placeholder="Enter age" required>
+
+            <button type="button" onclick="predictDiabetes()">Predict</button>
+        </form>
+
+        <div id="result" class="result"></div>
+        
+        <div id="visualizeTreeButton" style="display: none;">
+            <button id="visualizeButton">
+                Visualize Tree
+            </button>
+        </div>
+        
+    </main>
+
+    <script>
+        const treeFiles = Array.from({ length: 15 }, (_, i) => `JSON/tree_${i + 1}.json`);
+        let decisionTrees = [];
+    
+        // Load all the trees
+        async function loadTrees() {
+            const promises = treeFiles.map(file =>
+                fetch(file).then(res => res.json())
+            );
+            decisionTrees = await Promise.all(promises);
+            console.log("Decision trees loaded", decisionTrees);
+        }
+    
+        // Traverse a tree to get the decision path
+        function traverseTree(tree, input) {
+            let path = [];
+            let currentNode = tree;
+    
+            while (currentNode.label === null) {
+                path.push(currentNode.nodeIndex);
+    
+                const feature = input[currentNode.featureIndex];
+                if (feature < currentNode.threshold) {
+                    currentNode = currentNode.left;
+                } else {
+                    currentNode = currentNode.right;
+                }
+            }
+    
+            path.push(currentNode.nodeIndex); // Add leaf node
+            return { label: currentNode.label, path };
+        }
+    
+        // Predict the result
+        async function predictDiabetes() {
+            if (!decisionTrees.length) {
+                await loadTrees();
+            }
+    
+            const input = {
+                0: +document.getElementById("pregnancies").value,
+                1: +document.getElementById("glucose").value,
+                2: +document.getElementById("bloodPressure").value,
+                3: +document.getElementById("skinThickness").value,
+                4: +document.getElementById("insulin").value,
+                5: +document.getElementById("bmi").value,
+                6: +document.getElementById("diabetesPedigree").value,
+                7: +document.getElementById("age").value
+            };
+    
+            let votes = { 0: 0, 1: 0 };
+            let paths = {};
+    
+            decisionTrees.forEach((tree, index) => {
+                const { label, path } = traverseTree(tree, input);
+                votes[label]++;
+                paths[`tree_${index + 1}`] = path;
+            });
+    
+            localStorage.setItem("decisionPaths", JSON.stringify(paths));
+    
+            document.getElementById("result").innerText = 
+                `Result: ${votes[1] > votes[0] ? "Diabetes" : "No Diabetes"} (Diabetes: ${votes[1]}, No Diabetes: ${votes[0]})`;
+    
+            document.getElementById("visualizeTreeButton").style.display = "block";
+        }
+    
+        document.getElementById("visualizeButton").addEventListener("click", () => {
+            window.location.href = "visualize.html";
+        });
+    
+        // Load trees on page load
+        loadTrees();
+    </script> 
+</body>
+</html>
