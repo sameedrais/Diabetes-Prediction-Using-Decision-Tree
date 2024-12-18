@@ -1,21 +1,20 @@
- <!DOCTYPE html>
- <html lang="en">
- <head>
-     <meta charset="UTF-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-     <title>Decision Tree Visualization</title>
-     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <link rel = "stylesheet" href= "style/visualize.global.css">
-    <link rel = "stylesheet" href= "style/visualize.tree.css">
-    <link rel = "stylesheet" href= "style/visualize.button.css">
-    </head>
-    
-    
- <body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decision Tree Visualization</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="style/visualize.global.css">
+    <link rel="stylesheet" href="style/visualize.tree.css">
+    <link rel="stylesheet" href="style/visualize.button.css">
+</head>
+
+<body>
     <header>
         <h1>Decision Tree Visualization</h1>
     </header>
-     <div class="feature-box">
+    <div class="feature-box">
         <p><strong>Feature Mapping:</strong></p>
         <ul>
             <li><strong>F0:</strong> Pregnancies</li>
@@ -28,82 +27,98 @@
             <li><strong>F7:</strong> Age</li>
         </ul>
     </div>
-     <div class="button-container" id="buttonContainer">
-         <!-- Buttons for selecting trees will be dynamically created here -->
-     </div>
- 
-     <div id="tree"></div>
-     
-     <script>
-         const width = 1200;
-         const height = 2000;
-         
-         const svg = d3.select("#tree").append("svg")
-             .attr("width", width)
-             .attr("height", height)
-             .append("g")
-             .attr("transform", "translate(100, 50)");
- 
-         const treeLayout = d3.tree().size([height - 100, width - 200]);
- 
-         // Function to load and visualize a tree
-         function visualizeTree(treeFileName) {
-             d3.json(`JSON/${treeFileName}`).then(data => {
-                 svg.selectAll("*").remove(); // Clear previous tree
-                 
-                 const root = d3.hierarchy(data, d => [d.left, d.right].filter(x => x));
-                 const tree = treeLayout(root);
- 
-                 // Draw links
+    <div class="button-container" id="buttonContainer"></div>
+    <div id="tree"></div>
 
-                 svg.selectAll(".link")
-                     .data(tree.links())
-                     .join("path")
-                     .attr("class", "link")
-                     .attr("d", d3.linkHorizontal()
-                         .x(d => d.y)
-                         .y(d => d.x))
-                     .style("stroke", "#888")
-                     .style("stroke-width", 2);
- 
-                 // Draw nodes
-                 const nodes = svg.selectAll(".node")
-                     .data(tree.descendants())
-                     .join("g")
-                     .attr("class", "node")
-                     .attr("transform", d => `translate(${d.y}, ${d.x})`);
- 
-                 nodes.append("circle")
-                     .attr("r", 6)
-                     .style("fill", "#69b3a2");
- 
-                 nodes.append("text")
-                     .attr("dy", ".35em")
-                     .attr("x", d => d.children ? -15 : 15)
-                     .attr("text-anchor", d => d.children ? "end" : "start")
-                     .text(d => d.data.label !== null ? `Label: ${d.data.label}` : `F${d.data.featureIndex} < ${d.data.threshold}`)
-                     .style("font", "12px sans-serif")
-                     .style("fill", "#333");
-             }).catch(error => {
-                 console.error("Error loading tree:", error);
-             });
-         }
- 
-         // Dynamically create buttons for tree selection
-         function createTreeButtons() {
-             const buttonContainer = document.getElementById("buttonContainer");
-             for (let i = 1; i <= 15; i++) {
-                 const button = document.createElement("button");
-                 button.textContent = `Tree ${i}`;
-                 button.className = "tree-button";
-                 button.onclick = () => visualizeTree(`tree_${i}.json`);
-                 buttonContainer.appendChild(button);
-             }
-         }
- 
-         // Create buttons on page load
-         createTreeButtons();
-     </script>
- </body>
- </html>
- 
+    <script>
+        const treeFiles = Array.from({ length: 15 }, (_, i) => `JSON/tree_${i + 1}.json`);
+        let decisionTrees = [];
+        let decisionPaths = {};
+    
+        // Load all trees
+        async function loadTrees() {
+            const promises = treeFiles.map(file =>
+                fetch(file).then(res => res.json())
+            );
+            decisionTrees = await Promise.all(promises);
+            console.log("Decision trees loaded for visualization", decisionTrees);
+        }
+    
+        // Draw a tree and highlight the decision path
+        function drawTree(tree, path) {
+            const treeContainer = d3.select("#tree").html(""); // Clear previous tree
+            const width = 1200, height = 2000;
+            const xOffset = 100; // Add horizontal offset to shift the tree right
+
+            const svg = treeContainer.append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
+            const root = d3.hierarchy(tree, d => d.left || d.right ? [d.left, d.right] : []);
+            const treeLayout = d3.tree().size([height, width - 200]);
+            const nodes = treeLayout(root);
+
+            // Links
+            svg.selectAll(".link")
+                .data(nodes.links())
+                .join("path")
+                .attr("class", "link")
+                .attr("d", d3.linkHorizontal()
+                    .x(d => d.y + xOffset) // Shift links horizontally
+                    .y(d => d.x))
+                .style("stroke", d => path.includes(d.target.data.nodeIndex) ? "red" : "#aaa") // Path links in red
+                .style("stroke-width", d => path.includes(d.target.data.nodeIndex) ? 5 : 2)   // Thicker stroke for path links
+                .style("stroke-dasharray", "none"); // Solid links for all
+
+            // Nodes
+            const nodesGroup = svg.selectAll(".node")
+                .data(nodes.descendants())
+                .join("g")
+                .attr("class", "node")
+                .attr("transform", d => `translate(${d.y + xOffset}, ${d.x})`); // Shift nodes horizontally
+
+            nodesGroup.append("circle") // Change shape to circle
+                .attr("r", 6) // Radius of the circle
+                .style("fill", d => path.includes(d.data.nodeIndex) ? "red" : "#69b3a2") // Path nodes in red
+                .style("stroke", "black")
+                .style("stroke-width", 1);
+
+            // Place text above nodes
+            nodesGroup.append("text")
+                .attr("dy", "-1.5em") // Position text above the node
+                .attr("text-anchor", "middle")
+                .text(d => d.data.label !== null
+                    ? `Label: ${d.data.label}`
+                    : `F${d.data.featureIndex} < ${d.data.threshold}`)
+                .style("font", "12px sans-serif")
+                .style("fill", "black"); // Path node text in red
+
+            // Add safeguard for missing paths or invalid structures
+            if (!nodes.descendants().length) {
+                console.warn("Tree has no nodes or is improperly structured.");
+            }
+        }
+
+        // Load decision paths and add buttons
+        function setupVisualization() {
+            decisionPaths = JSON.parse(localStorage.getItem("decisionPaths"));
+            const buttonContainer = document.getElementById("buttonContainer");
+    
+            treeFiles.forEach((file, index) => {
+                const button = document.createElement("button");
+                button.textContent = `Tree ${index + 1}`;
+                button.className = "tree-button";
+                button.addEventListener("click", () => drawTree(decisionTrees[index], decisionPaths[`tree_${index + 1}`]));
+                buttonContainer.appendChild(button);
+            });
+        }
+    
+        // Initialize
+        (async function initialize() {
+            await loadTrees();
+            setupVisualization();
+        })();
+    </script>
+    
+</body>
+</html>
