@@ -31,7 +31,7 @@
     <div id="tree"></div>
 
     <script>
-        const treeFiles = Array.from({ length: 15 }, (_, i) => JSON/tree_${i + 1}.json);
+        const treeFiles = Array.from({ length: 15 }, (_, i) => `JSON/tree_${i + 1}.json`);
         let decisionTrees = [];
         let decisionPaths = {};
     
@@ -66,53 +66,34 @@
                 .attr("d", d3.linkHorizontal()
                     .x(d => d.y + xOffset) // Shift links horizontally
                     .y(d => d.x))
-                .style("stroke", "#888")
-                .style("stroke-width", 3)
+                .style("stroke", d => path.includes(d.target.data.nodeIndex) ? "red" : "#aaa") // Path links in red
+                .style("stroke-width", d => path.includes(d.target.data.nodeIndex) ? 5 : 2)   // Thicker stroke for path links
                 .style("stroke-dasharray", "none"); // Solid links for all
-                
-                // Path links transitioning to red after 1.5 sec
-                setTimeout(() => {
-                    d3.selectAll('.link')
-                    .transition()
-                    .duration(1000)
-                    .style("stroke-width", d => path.includes(d.target.data.nodeIndex) ? 5 : 3)
-                    .style("stroke", d => path.includes(d.target.data.nodeIndex) ? "#FF5733" : "#888");
-                }, 1500); // Change color after 1.5 seconds
 
             // Nodes
             const nodesGroup = svg.selectAll(".node")
                 .data(nodes.descendants())
                 .join("g")
                 .attr("class", "node")
-                .attr("transform", d => translate(${d.y + xOffset}, ${d.x})); // Shift nodes horizontally
+                .attr("transform", d => `translate(${d.y + xOffset}, ${d.x})`); // Shift nodes horizontally
 
             nodesGroup.append("circle") // Change shape to circle
                 .attr("r", 6) // Radius of the circle
-                .style("fill", "#69b3a2")
+                .style("fill", d => path.includes(d.data.nodeIndex) ? "red" : "#69b3a2") // Path nodes in red
                 .style("stroke", "black")
                 .style("stroke-width", 1);
-                
-                
-                
-                // Place text above nodes
-                nodesGroup.append("text")
+
+            // Place text above nodes
+            nodesGroup.append("text")
                 .attr("dy", "-1.5em") // Position text above the node
                 .attr("text-anchor", "middle")
                 .text(d => d.data.label !== null
-                ? Label: ${d.data.label}
-                : F${d.data.featureIndex} < ${d.data.threshold})
+                    ? `Label: ${d.data.label}`
+                    : `F${d.data.featureIndex} < ${d.data.threshold}`)
                 .style("font", "12px sans-serif")
                 .style("fill", "black"); // Path node text in red
-                
-                // Node color transitioning after 1.5 sec
-                setTimeout(() => {
-                    d3.selectAll('.node circle') 
-                    .transition()       // Add transition
-                    .duration(1000)     // Duration of 1 second
-                    .style("fill", d => path.includes(d.data.nodeIndex) ? "#FF5733" : "#69b3a2"); // Path nodes in red
-                }, 1500); // Trigger after 1.5 seconds
 
-                // Add safeguard for missing paths or invalid structures
+            // Add safeguard for missing paths or invalid structures
             if (!nodes.descendants().length) {
                 console.warn("Tree has no nodes or is improperly structured.");
             }
@@ -125,9 +106,9 @@
     
             treeFiles.forEach((file, index) => {
                 const button = document.createElement("button");
-                button.textContent = Tree ${index + 1};
+                button.textContent = `Tree ${index + 1}`;
                 button.className = "tree-button";
-                button.addEventListener("click", () => drawTree(decisionTrees[index], decisionPaths[tree_${index + 1}]));
+                button.addEventListener("click", () => drawTree(decisionTrees[index], decisionPaths[`tree_${index + 1}`]));
                 buttonContainer.appendChild(button);
             });
         }
