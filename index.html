@@ -45,6 +45,7 @@
         
             <button type="button" onclick="predictDiabetes()">Predict</button>
         </form>
+        
 
         <div id="result" class="result"></div>
         
@@ -57,7 +58,7 @@
     </main>
 
     <script>
-        const treeFiles = Array.from({ length: 15 }, (_, i) => `JSON/tree_${i + 1}.json`);
+        const treeFiles = Array.from({ length: 15 }, (_, i) => JSON/tree_${i + 1}.json);
         let decisionTrees = [];
     
         // Load all the trees
@@ -112,13 +113,13 @@
             decisionTrees.forEach((tree, index) => {
                 const { label, path } = traverseTree(tree, input);
                 votes[label]++;
-                paths[`tree_${index + 1}`] = path;
+                paths[tree_${index + 1}] = path;
             });
     
             localStorage.setItem("decisionPaths", JSON.stringify(paths));
     
             document.getElementById("result").innerText = 
-                `Result: ${votes[1] > votes[0] ? "Diabetes" : "No Diabetes"} (Diabetes: ${votes[1]}, No Diabetes: ${votes[0]})`;
+                Result: ${votes[1] > votes[0] ? "Diabetes" : "No Diabetes"} (Diabetes: ${votes[1]}, No Diabetes: ${votes[0]});
     
             document.getElementById("visualizeTreeButton").style.display = "block";
         }
