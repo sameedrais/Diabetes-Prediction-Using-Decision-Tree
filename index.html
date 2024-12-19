@@ -20,29 +20,29 @@
         <!-- Form for input features -->
         <form id="predictionForm">
             <label for="pregnancies">Pregnancies</label>
-            <input type="number" id="pregnancies" name="pregnancies" placeholder="Enter number of pregnancies" required>
-
+            <input type="number" id="pregnancies" name="pregnancies" placeholder="Enter number of pregnancies (e.g., 0-20)" required>
+        
             <label for="glucose">Glucose</label>
-            <input type="number" id="glucose" name="glucose" placeholder="Enter glucose level" required>
-
+            <input type="number" id="glucose" name="glucose" placeholder="Enter glucose level (mg/dL)" required>
+        
             <label for="bloodPressure">Blood Pressure</label>
-            <input type="number" id="bloodPressure" name="bloodPressure" placeholder="Enter blood pressure" required>
-
+            <input type="number" id="bloodPressure" name="bloodPressure" placeholder="Enter blood pressure (mmHg)" required>
+        
             <label for="skinThickness">Skin Thickness</label>
-            <input type="number" id="skinThickness" name="skinThickness" placeholder="Enter skin thickness" required>
-
+            <input type="number" id="skinThickness" name="skinThickness" placeholder="Enter skin thickness (mm)" required>
+        
             <label for="insulin">Insulin</label>
-            <input type="number" id="insulin" name="insulin" placeholder="Enter insulin level" required>
-
+            <input type="number" id="insulin" name="insulin" placeholder="Enter insulin level (µU/mL)" required>
+        
             <label for="bmi">BMI</label>
-            <input type="number" step="0.1" id="bmi" name="bmi" placeholder="Enter BMI value" required>
-
+            <input type="number" step="0.1" id="bmi" name="bmi" placeholder="Enter BMI value (kg/m²)" required>
+        
             <label for="diabetesPedigree">Diabetes Pedigree Function</label>
             <input type="number" step="0.01" id="diabetesPedigree" name="diabetesPedigree" placeholder="Enter diabetes pedigree function" required>
-
+        
             <label for="age">Age</label>
-            <input type="number" id="age" name="age" placeholder="Enter age" required>
-
+            <input type="number" id="age" name="age" placeholder="Enter age (years)" required>
+        
             <button type="button" onclick="predictDiabetes()">Predict</button>
         </form>
 
